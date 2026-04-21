@@ -5,8 +5,10 @@
     sleep: 8,
     water: 3000,
     exercise: 1,
+    work: 8,
   }
   const ML_PER_OZ = 29.5735
+  const BLUE_SHADES = ['#1f5e97', '#2f6fa3', '#3f80b0', '#5a98c6']
 
   const GRAPH_START_DATE_KEY = '2026-04-21'
 
@@ -14,6 +16,7 @@
     { key: 'sleep', label: 'Sleep', unit: 'hours', goal: GOALS.sleep },
     { key: 'water', label: 'Water', unit: 'ml', goal: GOALS.water },
     { key: 'exercise', label: 'Exercise', unit: 'hours', goal: GOALS.exercise },
+    { key: 'work', label: 'Work', unit: 'hours', goal: GOALS.work },
   ]
 
   let profiles = []
@@ -22,14 +25,17 @@
   let nextLogId = 1
 
   let activeMetric = 'sleep'
+  let leftPanelView = 'graph'
   let waterViewUnit = 'ml'
   let selectedUserId = ''
   let userError = ''
   let profileError = ''
   let logError = ''
+  let saveNotice = ''
 
   let showAddProfile = false
   let newProfileName = ''
+  let newProfileColor = BLUE_SHADES[1]
 
   let logForm = {
     category: 'sleep',
@@ -44,16 +50,27 @@
   let activeGraphEntries = []
 
   $: selectedProfile = profiles.find((profile) => profile.id === selectedUserId) ?? null
-  $: sleepEntries = buildSeries('sleep')
-  $: waterEntries = buildSeries('water')
-  $: exerciseEntries = buildSeries('exercise')
+  $: {
+    if (profiles.length > 0 && !profiles.some((profile) => profile.id === selectedUserId)) {
+      selectedUserId = profiles[0].id
+    }
+  }
+  $: sleepEntries = buildSeries('sleep', logs, profiles)
+  $: waterEntries = buildSeries('water', logs, profiles)
+  $: exerciseEntries = buildSeries('exercise', logs, profiles)
+  $: workEntries = buildSeries('work', logs, profiles)
   $: activeMetricConfig = METRICS.find((metric) => metric.key === activeMetric) ?? METRICS[0]
+  $: historyRows = buildHistoryRows(logs, profiles)
 
   $: {
     if (activeMetric === 'water') {
       activeGraphUnit = waterViewUnit
       activeGraphGoal = convertMlToDisplayUnit(GOALS.water)
       activeGraphEntries = convertWaterEntriesForDisplay(waterEntries)
+    } else if (activeMetric === 'work') {
+      activeGraphUnit = 'hours'
+      activeGraphGoal = GOALS.work
+      activeGraphEntries = workEntries
     } else if (activeMetric === 'exercise') {
       activeGraphUnit = 'hours'
       activeGraphGoal = GOALS.exercise
@@ -108,10 +125,11 @@
     return new Date(year, month - 1, day, hours, minutes, 0, 0)
   }
 
-  function createProfile(username) {
+  function createProfile(username, color = BLUE_SHADES[1]) {
     const newProfile = {
       id: String(nextProfileId++),
       username,
+      color,
     }
     profiles = [...profiles, newProfile]
     return newProfile
@@ -120,6 +138,9 @@
   function toggleAddProfile() {
     showAddProfile = !showAddProfile
     profileError = ''
+    if (showAddProfile) {
+      newProfileColor = BLUE_SHADES[1]
+    }
   }
 
   function addProfileFromPanel() {
@@ -139,13 +160,19 @@
       return
     }
 
-    const created = createProfile(username)
+    const created = createProfile(username, newProfileColor)
     selectedUserId = created.id
     newProfileName = ''
+    newProfileColor = BLUE_SHADES[1]
     showAddProfile = false
   }
 
   function ensureUserSelected() {
+    if (profiles.length === 0) {
+      userError = 'Add a profile with + first.'
+      return ''
+    }
+
     if (selectedUserId && profiles.some((profile) => profile.id === selectedUserId)) {
       return selectedUserId
     }
@@ -157,6 +184,7 @@
   function addLog() {
     logError = ''
     userError = ''
+    saveNotice = ''
 
     const userId = ensureUserSelected()
     if (!userId) {
@@ -184,6 +212,7 @@
 
       logForm = { ...logForm, waterAmount: '' }
       activeMetric = 'water'
+      saveNotice = 'Water log saved.'
       return
     }
 
@@ -224,13 +253,15 @@
       start: defaultDateTime(-60),
       end: defaultDateTime(0),
     }
+    saveNotice = `${logLabel(logForm.category)} log saved.`
   }
 
-  function buildSeries(category) {
-    const usernameById = new Map(profiles.map((profile) => [profile.id, profile.username]))
+  function buildSeries(category, sourceLogs, sourceProfiles) {
+    const usernameById = new Map(sourceProfiles.map((profile) => [profile.id, profile.username]))
+    const colorById = new Map(sourceProfiles.map((profile) => [profile.id, profile.color ?? BLUE_SHADES[1]]))
     const totalsByDayAndUser = new Map()
 
-    for (const log of logs) {
+    for (const log of sourceLogs) {
       if (log.category !== category) {
         continue
       }
@@ -246,12 +277,14 @@
       const [dateKey, rawUserId] = key.split('::')
       const userId = String(rawUserId)
       const username = usernameById.get(userId) ?? `User ${userId}`
+      const userColor = colorById.get(userId) ?? BLUE_SHADES[1]
 
       result.push({
         id: key,
         dateKey,
         userId,
         username,
+        userColor,
         value,
       })
     }
@@ -280,6 +313,38 @@
       value: entry.value / ML_PER_OZ,
     }))
   }
+
+  function formatHoursShort(value) {
+    const rounded = Math.round(value * 10) / 10
+    if (Number.isInteger(rounded)) return `${rounded.toFixed(0)}h`
+    return `${rounded.toFixed(1)}h`
+  }
+
+  function logLabel(category) {
+    if (category === 'exercise') return 'Gym'
+    if (category === 'work') return 'Work'
+    if (category === 'water') return 'Water'
+    return 'Sleep'
+  }
+
+  function buildHistoryRows(sourceLogs, sourceProfiles) {
+    const usernameById = new Map(sourceProfiles.map((profile) => [profile.id, profile.username]))
+
+    return sourceLogs
+      .slice()
+      .sort((a, b) => Number(b.id) - Number(a.id))
+      .map((log) => {
+        const typeOfLog = logLabel(log.category)
+        const username = usernameById.get(String(log.userId)) ?? `User ${log.userId}`
+        const amountLogged = log.category === 'water' ? `${Math.round(log.value)}ml` : formatHoursShort(log.value)
+        return {
+          id: log.id,
+          typeOfLog,
+          username,
+          amountLogged,
+        }
+      })
+  }
 </script>
 
 <main class="shell">
@@ -298,27 +363,77 @@
             </button>
           {/each}
         </nav>
-        {#if activeMetric === 'water'}
-          <label class="view-unit">
-            View as
-            <select bind:value={waterViewUnit}>
-              <option value="ml">ml</option>
-              <option value="oz">oz</option>
-            </select>
-          </label>
-        {/if}
+
+        <div class="graph-toolbar-right">
+          {#if leftPanelView === 'graph' && activeMetric === 'water'}
+            <label class="view-unit">
+              View as
+              <select bind:value={waterViewUnit}>
+                <option value="ml">ml</option>
+                <option value="oz">oz</option>
+              </select>
+            </label>
+          {/if}
+
+          <nav class="view-nav" aria-label="Left panel view selector">
+            <button
+              type="button"
+              class:active={leftPanelView === 'graph'}
+              class="view-tab"
+              on:click={() => (leftPanelView = 'graph')}
+            >
+              Graph View
+            </button>
+            <button
+              type="button"
+              class:active={leftPanelView === 'history'}
+              class="view-tab"
+              on:click={() => (leftPanelView = 'history')}
+            >
+              Logging History
+            </button>
+          </nav>
+        </div>
       </div>
 
-      {#key `${activeMetric}-${waterViewUnit}-${logs.length}-${profiles.length}`}
-        <CategoryGraph
-          title={activeMetricConfig.label}
-          unit={activeGraphUnit}
-          goal={activeGraphGoal}
-          entries={activeGraphEntries}
-          highlightUserId={selectedUserId}
-          startDateKey={GRAPH_START_DATE_KEY}
-        />
-      {/key}
+      {#if leftPanelView === 'graph'}
+
+        {#key `${activeMetric}-${waterViewUnit}-${logs.length}-${profiles.length}`}
+          <CategoryGraph
+            title={activeMetricConfig.label}
+            unit={activeGraphUnit}
+            goal={activeGraphGoal}
+            entries={activeGraphEntries}
+            highlightUserId={selectedUserId}
+            startDateKey={GRAPH_START_DATE_KEY}
+          />
+        {/key}
+      {:else}
+        <section class="history-view">
+          {#if historyRows.length === 0}
+            <p class="history-empty">No logs yet.</p>
+          {:else}
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Type of Log</th>
+                  <th>Username</th>
+                  <th>Amt Logged</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each historyRows as row}
+                  <tr>
+                    <td>{row.typeOfLog}</td>
+                    <td>{row.username}</td>
+                    <td>{row.amountLogged}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          {/if}
+        </section>
+      {/if}
     </article>
 
     <aside class="card entry-panel">
@@ -336,6 +451,21 @@
             <input id="new-profile-name" type="text" bind:value={newProfileName} placeholder="Enter username" maxlength="24" />
             <button type="button" class="secondary-btn" on:click={addProfileFromPanel}>Add</button>
           </div>
+          <fieldset class="color-palette">
+            <legend>Dot Color</legend>
+            <div class="color-options">
+              {#each BLUE_SHADES as shade}
+                <button
+                  type="button"
+                  class:active={newProfileColor === shade}
+                  class="color-dot"
+                  style={`--swatch:${shade}`}
+                  on:click={() => (newProfileColor = shade)}
+                  aria-label={`Choose color ${shade}`}
+                ></button>
+              {/each}
+            </div>
+          </fieldset>
           {#if profileError}
             <p class="error">{profileError}</p>
           {/if}
@@ -364,6 +494,7 @@
           <option value="sleep">Sleep</option>
           <option value="water">Water</option>
           <option value="exercise">Gym / Exercise</option>
+          <option value="work">Work</option>
         </select>
 
         {#if logForm.category === 'water'}
@@ -386,6 +517,9 @@
         <button type="submit" class="primary">Save Log</button>
         {#if logError}
           <p class="error">{logError}</p>
+        {/if}
+        {#if saveNotice}
+          <p class="success">{saveNotice}</p>
         {/if}
       </form>
     </aside>

@@ -85,6 +85,38 @@ p {
   justify-content: space-between;
   gap: 0.7rem;
   margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.graph-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.view-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-tab {
+  border: 1px solid #c8d6e5;
+  background: #eef5fb;
+  color: #31516d;
+  border-radius: 999px;
+  padding: 0.42rem 0.8rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.view-tab.active {
+  background: #2f6fa3;
+  color: #f8fdff;
+  border-color: transparent;
 }
 
 .metric-nav {
@@ -175,6 +207,41 @@ p {
   gap: 0.45rem;
 }
 
+.color-palette {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.color-palette legend {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2a4561;
+  padding: 0;
+}
+
+.color-options {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.color-dot {
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  border: 2px solid #d2deea;
+  background: var(--swatch);
+  padding: 0;
+  cursor: pointer;
+}
+
+.color-dot.active {
+  border-color: #173b57;
+  box-shadow: 0 0 0 2px rgba(23, 59, 87, 0.15);
+}
+
 .secondary-btn {
   border: none;
   cursor: pointer;
@@ -246,8 +313,18 @@ button:focus {
   background: #275f8c;
 }
 
+.view-tab.active:hover {
+  background: #275f8c;
+}
+
 .error {
   color: #af2f33;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.success {
+  color: #1f6b4b;
   font-size: 0.84rem;
   font-weight: 600;
 }
@@ -257,6 +334,43 @@ button:focus {
   border-radius: 14px;
   border: 1px solid #d4deea;
   padding: 0.8rem;
+}
+
+.history-view {
+  border: 1px solid #d4deea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.6rem;
+}
+
+.history-empty {
+  color: #48627e;
+  font-size: 0.9rem;
+  padding: 0.35rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.history-table th,
+.history-table td {
+  text-align: left;
+  padding: 0.52rem 0.45rem;
+  border-bottom: 1px solid #e3ecf5;
+}
+
+.history-table th {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #3f5f7b;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .graph-card header {
@@ -363,5 +477,9 @@ button:focus {
 
   .graph-toolbar {
     flex-wrap: wrap;
+  }
+
+  .graph-toolbar-right {
+    margin-left: 0;
   }
 }

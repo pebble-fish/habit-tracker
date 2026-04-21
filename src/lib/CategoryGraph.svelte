@@ -13,7 +13,7 @@
     bottom: 252,
   }
 
-  const USER_COLORS = ['#1f8e71', '#2e7fb3', '#d6762b', '#8a5ebf', '#5a8c2d', '#b4507d']
+  const DEFAULT_BLUE = '#2f6fa3'
 
   $: chartStartDate = parseDateKey(startDateKey)
   $: today = stripTime(new Date())
@@ -138,6 +138,7 @@
         map.set(entry.userId, {
           userId: entry.userId,
           username: entry.username,
+          userColor: entry.userColor,
           entries: [],
         })
       }
@@ -155,21 +156,8 @@
     return seriesEntries.map((entry) => `${xForDate(entry.dateKey)},${yFor(entry.value)}`).join(' ')
   }
 
-  function colorForUser(userId) {
-    const value = Number(userId)
-    const paletteIndex = Number.isFinite(value)
-      ? Math.abs(value) % USER_COLORS.length
-      : Math.abs(hashString(userId)) % USER_COLORS.length
-    return USER_COLORS[paletteIndex]
-  }
-
-  function hashString(text) {
-    let hash = 0
-    for (let i = 0; i < text.length; i += 1) {
-      hash = (hash << 5) - hash + text.charCodeAt(i)
-      hash |= 0
-    }
-    return hash
+  function colorForEntry(userColor) {
+    return userColor || DEFAULT_BLUE
   }
 </script>
 
@@ -199,7 +187,7 @@
         <polyline
           class="series-line"
           points={linePointsFor(series.entries)}
-          stroke={colorForUser(series.userId)}
+          stroke={colorForEntry(series.userColor)}
           opacity={series.userId === highlightUserId || !highlightUserId ? 0.9 : 0.35}
         />
       {/if}
@@ -214,7 +202,7 @@
         cx={x}
         cy={y}
         r={selected ? 8 : 6}
-        fill={colorForUser(entry.userId)}
+        fill={colorForEntry(entry.userColor)}
         stroke={selected ? '#173b57' : '#ffffff'}
         stroke-width={selected ? 3 : 2}
         opacity={selected || !highlightUserId ? 1 : 0.5}
