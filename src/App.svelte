@@ -1,5 +1,7 @@
 <script>
+  import { onMount } from 'svelte'
   import CategoryGraph from './lib/CategoryGraph.svelte'
+  import { loadAppState, saveAppState } from './lib/database'
 
   const GOALS = {
     sleep: 8,
@@ -48,6 +50,9 @@
   let activeGraphUnit = 'hours'
   let activeGraphGoal = GOALS.sleep
   let activeGraphEntries = []
+  let hasLoadedPersistedState = false
+  let lastPersistedSignature = ''
+  let storageNotice = ''
 
   $: selectedProfile = profiles.find((profile) => profile.id === selectedUserId) ?? null
   $: {
@@ -81,6 +86,55 @@
       activeGraphEntries = sleepEntries
     }
   }
+
+  $: if (hasLoadedPersistedState) {
+    const snapshot = {
+      profiles,
+      logs,
+      nextProfileId,
+      nextLogId,
+      selectedUserId,
+      activeMetric,
+      leftPanelView,
+      waterViewUnit,
+    }
+    const signature = JSON.stringify(snapshot)
+    if (signature !== lastPersistedSignature) {
+      lastPersistedSignature = signature
+      void persistState(snapshot)
+    }
+  }
+
+  onMount(async () => {
+    try {
+      const state = await loadAppState()
+      if (state) {
+        profiles = Array.isArray(state.profiles) ? state.profiles : []
+        logs = Array.isArray(state.logs) ? state.logs : []
+        nextProfileId = coerceNextId(state.nextProfileId, profiles)
+        nextLogId = coerceNextId(state.nextLogId, logs)
+        selectedUserId = typeof state.selectedUserId === 'string' ? state.selectedUserId : ''
+        activeMetric = METRICS.some((metric) => metric.key === state.activeMetric) ? state.activeMetric : 'sleep'
+        leftPanelView = state.leftPanelView === 'history' ? 'history' : 'graph'
+        waterViewUnit = state.waterViewUnit === 'oz' ? 'oz' : 'ml'
+        lastPersistedSignature = JSON.stringify({
+          profiles,
+          logs,
+          nextProfileId,
+          nextLogId,
+          selectedUserId,
+          activeMetric,
+          leftPanelView,
+          waterViewUnit,
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load persisted tracker state', error)
+      storageNotice = 'Could not read saved data in this browser.'
+    } finally {
+      hasLoadedPersistedState = true
+    }
+  })
 
   function formatDate(date) {
     const year = date.getFullYear()
@@ -123,6 +177,35 @@
     }
 
     return new Date(year, month - 1, day, hours, minutes, 0, 0)
+  }
+
+  function deriveNextIdFromItems(items) {
+    let maxId = 0
+    for (const item of items) {
+      const numericId = Number(item?.id)
+      if (Number.isFinite(numericId) && numericId > maxId) {
+        maxId = numericId
+      }
+    }
+    return maxId + 1
+  }
+
+  function coerceNextId(value, items) {
+    const fallback = deriveNextIdFromItems(items)
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed >= fallback) {
+      return parsed
+    }
+    return fallback
+  }
+
+  async function persistState(snapshot) {
+    try {
+      await saveAppState(snapshot)
+    } catch (error) {
+      console.error('Failed to persist tracker state', error)
+      storageNotice = 'Could not save data in this browser.'
+    }
   }
 
   function createProfile(username, color = BLUE_SHADES[1]) {
@@ -520,6 +603,9 @@
         {/if}
         {#if saveNotice}
           <p class="success">{saveNotice}</p>
+        {/if}
+        {#if storageNotice}
+          <p class="error">{storageNotice}</p>
         {/if}
       </form>
     </aside>
