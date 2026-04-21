@@ -1,0 +1,307 @@
+:root {
+  font-family: 'Avenir Next', 'Trebuchet MS', 'Franklin Gothic Medium', sans-serif;
+  color: #1d2a38;
+  background: radial-gradient(circle at top, #f6fff8 0%, #eef5fb 45%, #e7edf6 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#app {
+  width: min(1160px, 100% - 2rem);
+  margin: 1.75rem auto;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.top {
+  padding: 1.25rem 1.4rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0f4c81 0%, #1f8e71 68%, #f0a24d 140%);
+  color: #f8fdff;
+  box-shadow: 0 14px 34px rgba(16, 57, 92, 0.2);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.84;
+}
+
+.top h1 {
+  margin-top: 0.4rem;
+  font-size: clamp(1.65rem, 1.4rem + 1.5vw, 2.35rem);
+  line-height: 1.12;
+}
+
+.subhead {
+  margin-top: 0.45rem;
+  max-width: 62ch;
+  font-size: 0.99rem;
+  opacity: 0.95;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #d4dee8;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 12px 24px rgba(30, 53, 83, 0.08);
+}
+
+.card h2 {
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.stack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #2a4561;
+}
+
+input,
+select,
+button {
+  font: inherit;
+  border-radius: 10px;
+}
+
+input,
+select {
+  border: 1px solid #c5d2df;
+  padding: 0.58rem 0.66rem;
+  background: #ffffff;
+}
+
+input:focus,
+select:focus,
+button:focus {
+  outline: 2px solid #2e7fb3;
+  outline-offset: 1px;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  padding: 0.62rem 0.85rem;
+  font-weight: 700;
+  color: #f7fcff;
+  background: linear-gradient(135deg, #2e7fb3 0%, #31916a 100%);
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+}
+
+.error {
+  color: #af2f33;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: #48627c;
+}
+
+.chips {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.chips li {
+  border-radius: 999px;
+  padding: 0.26rem 0.64rem;
+  border: 1px solid #b6c9d8;
+  background: #eef4fa;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.date-row {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid #d2dfeb;
+}
+
+.selection {
+  margin-left: auto;
+  font-size: 0.88rem;
+  color: #214f70;
+}
+
+.graphs {
+  display: grid;
+  gap: 1rem;
+}
+
+.log-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.log-list li {
+  display: grid;
+  gap: 0.16rem;
+  border-radius: 10px;
+  padding: 0.56rem 0.66rem;
+  border: 1px solid #d0dce8;
+  background: #f8fbfe;
+}
+
+.log-list span {
+  font-size: 0.9rem;
+  color: #35516e;
+}
+
+.graph-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  border: 1px solid #d4deea;
+  padding: 0.9rem;
+  box-shadow: 0 11px 24px rgba(31, 51, 74, 0.08);
+}
+
+.graph-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.graph-card h3 {
+  font-size: 1.03rem;
+}
+
+.graph-card p {
+  color: #48627e;
+  font-size: 0.85rem;
+}
+
+.graph-card svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.graph-card .grid {
+  stroke: #d6e1ec;
+  stroke-width: 1;
+}
+
+.graph-card .axis {
+  font-size: 11px;
+  fill: #5d7590;
+  text-anchor: end;
+}
+
+.graph-card .goal {
+  stroke: #ec8f2d;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.graph-card .goal-label {
+  font-size: 11px;
+  fill: #9f5e10;
+  text-anchor: end;
+}
+
+.graph-card circle {
+  fill: #1f8e71;
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.graph-card circle.selected {
+  fill: #1e6ca0;
+  r: 10;
+}
+
+.graph-card .value {
+  font-size: 11px;
+  fill: #20435f;
+  text-anchor: middle;
+  font-weight: 700;
+}
+
+.graph-card .name {
+  font-size: 11px;
+  fill: #2f506d;
+  text-anchor: middle;
+}
+
+.empty {
+  padding: 0.6rem 0;
+}
+
+@media (max-width: 760px) {
+  #app {
+    width: min(1160px, 100% - 1rem);
+    margin: 0.9rem auto;
+  }
+
+  .top,
+  .card,
+  .graph-card {
+    border-radius: 14px;
+  }
+
+  .selection {
+    margin-left: 0;
+    width: 100%;
+  }
+}
