@@ -34,13 +34,21 @@ export default async function handler(req, res) {
 
   const redis = getRedisClient()
   if (!redis) {
-    return res.status(503).json({ error: 'Server storage is not configured.' })
+    return res.status(503).json({
+      error: 'Server storage is not configured.',
+      configured: false,
+      storage: 'none',
+    })
   }
 
   try {
     if (req.method === 'GET') {
       const state = await redis.get(STATE_KEY)
-      return res.status(200).json({ state: state ?? null })
+      return res.status(200).json({
+        state: state ?? null,
+        configured: true,
+        storage: 'upstash-redis',
+      })
     }
 
     const body = parseBody(req.body)
@@ -51,8 +59,12 @@ export default async function handler(req, res) {
     }
 
     await redis.set(STATE_KEY, state)
-    return res.status(200).json({ ok: true })
+    return res.status(200).json({ ok: true, configured: true, storage: 'upstash-redis' })
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to access server storage' })
+    return res.status(500).json({
+      error: 'Failed to access server storage',
+      configured: true,
+      storage: 'upstash-redis',
+    })
   }
 }

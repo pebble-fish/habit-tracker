@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte'
   import CategoryGraph from './lib/CategoryGraph.svelte'
-  import { loadAppState, saveAppState } from './lib/database'
+  import { getStorageStatus, loadAppState, saveAppState } from './lib/database'
 
   const GOALS = {
     sleep: 8,
@@ -128,6 +128,13 @@
           waterViewUnit,
         })
       }
+
+      const status = getStorageStatus()
+      if (status.mode === 'local') {
+        storageNotice = `Sync fallback: ${status.reason || 'Using browser-local storage only'}`
+      } else {
+        storageNotice = ''
+      }
     } catch (error) {
       console.error('Failed to load persisted tracker state', error)
       storageNotice = 'Could not read saved data in this browser.'
@@ -202,6 +209,13 @@
   async function persistState(snapshot) {
     try {
       await saveAppState(snapshot)
+
+      const status = getStorageStatus()
+      if (status.mode === 'local') {
+        storageNotice = `Sync fallback: ${status.reason || 'Using browser-local storage only'}`
+      } else {
+        storageNotice = ''
+      }
     } catch (error) {
       console.error('Failed to persist tracker state', error)
       storageNotice = 'Could not save data in this browser.'

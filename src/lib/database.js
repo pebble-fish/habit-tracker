@@ -6,6 +6,14 @@ const FALLBACK_STORAGE_KEY = 'tracker-app-state'
 const REMOTE_STATE_ENDPOINT = '/api/state'
 
 let dbPromise
+let storageStatus = {
+  mode: 'unknown',
+  reason: '',
+}
+
+function setStorageStatus(mode, reason = '') {
+  storageStatus = { mode, reason }
+}
 
 function openDatabase() {
   if (typeof indexedDB === 'undefined') {
@@ -93,6 +101,7 @@ async function loadRemoteState() {
   }
 
   const data = await response.json()
+  setStorageStatus('server')
   return data?.state ?? null
 }
 
@@ -108,15 +117,21 @@ async function saveRemoteState(payload) {
   if (!response.ok) {
     throw new Error(`Remote save failed with ${response.status}`)
   }
+
+  setStorageStatus('server')
+}
+
+export function getStorageStatus() {
+  return storageStatus
 }
 
 export async function loadAppState() {
   try {
     const remoteState = await loadRemoteState()
-    if (remoteState && typeof remoteState === 'object') {
-      return remoteState
-    }
-  } catch {
+    if (remoteState && typeof remoteState === 'object') return remoteState
+    return null
+  } catch (error) {
+    setStorageStatus('local', error instanceof Error ? error.message : 'Remote unavailable')
     // Fall back to local storage when remote API is unavailable.
   }
 
@@ -130,10 +145,12 @@ export async function saveAppState(state) {
   }
 
   let remoteSaved = false
+  let remoteErrorReason = ''
   try {
     await saveRemoteState(payload)
     remoteSaved = true
-  } catch {
+  } catch (error) {
+    remoteErrorReason = error instanceof Error ? error.message : 'Remote save unavailable'
     // Keep local persistence path as fallback/offline support.
   }
 
@@ -143,6 +160,10 @@ export async function saveAppState(state) {
     if (!remoteSaved) {
       throw localError
     }
+  }
+
+  if (!remoteSaved) {
+    setStorageStatus('local', remoteErrorReason || 'Using browser-local storage only')
   }
 
   return APP_STATE_KEY
